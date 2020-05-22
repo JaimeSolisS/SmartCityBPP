@@ -1,38 +1,43 @@
 import pygame, sys, os, random
+    
+class Simulator: 
 
-class SlidePuzzle:
-
-    prev = None 
+    previous = None 
+    moves = None
     speed = 500
 
-    def __init__(self,gs,ts,ms):  #gridSize, size of tiles, margin size
+    def __init__(self, gs,ts,ms):  #gridSize, size of tiles, margin size
         self.gs, self.ts, self.ms = gs,ts,ms
 
         #create grid
-
         self.tiles_len  = gs[0]*gs[1]-1 
         self.tiles = [(x,y) for y in range (gs[1]) for x in range(gs[0])] 
-       
-       #We have to identical array of tile pos to use one to slide them to the new position
+        self.tiles.append(self.tiles.pop(self.tiles.index((1,0))))    
+
+        #We have to identical array of tile pos to use one to slide them to the new position
         self.tilepos=[(x*(ts+ms)+ms, y*(ts+ms)+ms) for y in range (gs[1]) for x in range(gs[0])] #actual position on screen
         #array for coord on screen for the grid
         self.tilePOS = { (x,y): (x*(ts+ms)+ms, y*(ts+ms)+ms) for y in range (gs[1]) for x in range(gs[0])} #the place they slide to
-        
 
         self.images = []
         #text 
-        font = pygame.font.Font(None, 120)
+        font = pygame.font.Font(None, 20)
         
         for i in range (self.tiles_len): 
             x,y = self.tilepos[i]
             image = pygame.Surface((ts,ts))
-            image.fill((0,167,201))
+            if i == 0 or i ==7:
+                image.fill((255,0,0))
+            elif i == 34:
+                image.fill((0,255,0))
+            else:
+                image.fill((0,167,201))
             text = font.render(str(i+1), 2, (0,0,0))
             w,h = text.get_size()
             image.blit(text, ((ts-w)/2, (ts-h)/2))
             self.images+=[image]
 
-        #self.switch((0,0))
+        
 
 
     def getBlank(self): 
@@ -62,6 +67,7 @@ class SlidePuzzle:
                 tile = mpos[0]//self.ts, mpos[1]//self.ts
                 if self.in_grid(tile) and tile in self.adjacent():
                     self.switch(tile)
+                    print(self.tiles)
 
         s = self.speed * dt 
         for i in range (self.tiles_len): 
@@ -71,8 +77,6 @@ class SlidePuzzle:
             #Otherwise, we just need to add/substract in direction
             dx,dy = X-x, Y-y
             self.tilepos[i] = (X if abs(dx)<s else x+s if dx>0 else x-s), (Y if abs(dy)<s else y+s if dy>0 else y-s)
-
-
 
     def draw(self, screen):
         for i in range (self.tiles_len): 
@@ -92,9 +96,9 @@ def main():
     pygame.init()
     os.environ['SDL_VIDEO_CENTERED'] = '1'
     pygame.display.set_caption('SMART CITY: Bicycle Parking Problem')
-    screen = pygame.display.set_mode((800,600))
+    screen = pygame.display.set_mode((400,700))
     fpsclock = pygame.time.Clock()
-    program = SlidePuzzle((3,3), 160, 5)
+    program = Simulator((8,15), 40, 5)
 
 
     while True: 
@@ -115,3 +119,12 @@ def main():
 
 if __name__ == "__main__": 
     main()
+
+
+
+
+        
+
+    
+
+        
