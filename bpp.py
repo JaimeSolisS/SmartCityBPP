@@ -1,4 +1,41 @@
 import pygame, sys, os, random
+
+#A* Used for getting path to target while avoiding other tiles
+def AStar (start, end, walls, size): 
+    
+    cells = {(x,y) : {'pos' : (x,y), 'parent': None, 'g': 0, 'h': max(abs(x-end[0]), abs(y-end[1])), 'wall': (x,y) in walls} for y in range(size[1]) for x in range(size[0])}
+    opened = [cells[start]] 
+    closed = []
+    path =[]
+    
+    while opened:
+        
+        current = min(opened, key=lambda i: i['g']+i['h'])
+        closed.append(current) 
+        opened.remove(current)
+        
+        if current['pos']==end:
+            while current['parent']: 
+                path.append(current['pos'])
+                current=current['parent']
+            return path[::-1]
+
+        for dx,dy in ((-1,0), (1,0), (0,-1), (0,1)):
+            x,y = current['pos'][0]+dx, current['pos'][1]+dy
+            if x<0 or y<0 or x>=size[0] or y>=size[1]: 
+                continue
+            adj = cells[(x,y)] 
+            if adj['wall'] or adj in closed: 
+                continue
+            new_g = current['g']+1
+            new_cell = adj not in opened
+            if new_cell or new_g<adj['g']: 
+                adj['parent'] = current 
+                adj['g'] = new_g
+            if new_cell: 
+                opened.append(adj)
+
+    return path
     
 class Simulator: 
 
@@ -7,17 +44,20 @@ class Simulator:
     speed = 500
 
     def __init__(self, gs,ts,ms):  #gridSize, size of tiles, margin size
-        self.gs, self.ts, self.ms = gs,ts,ms
+        self.size, self.ts, self.ms = gs,ts,ms
+        self.width = self.size[0]
+        self.heigth = self.size[1]
+        self.walls = [(x,y) for y in range(self.heigth-2) for x in range(self.-2)]
 
         #create grid
-        self.tiles_len  = gs[0]*gs[1]-1 
-        self.tiles = [(x,y) for y in range (gs[1]) for x in range(gs[0])] 
+        self.tiles_len  = self.width * self.heigth-1 
+        self.tiles = [(x,y) for y in range (self.heigth) for x in range(self.width)] 
         self.tiles.append(self.tiles.pop(self.tiles.index((1,0))))    
 
         #We have to identical array of tile pos to use one to slide them to the new position
-        self.tilepos=[(x*(ts+ms)+ms, y*(ts+ms)+ms) for y in range (gs[1]) for x in range(gs[0])] #actual position on screen
+        self.tilepos=[(x*(ts+ms)+ms, y*(ts+ms)+ms) for y in range (self.heigth) for x in range(self.width)] #actual position on screen
         #array for coord on screen for the grid
-        self.tilePOS = { (x,y): (x*(ts+ms)+ms, y*(ts+ms)+ms) for y in range (gs[1]) for x in range(gs[0])} #the place they slide to
+        self.tilePOS = { (x,y): (x*(ts+ms)+ms, y*(ts+ms)+ms) for y in range (self.heigth) for x in range(self.width)} #the place they slide to
 
         self.images = []
         #text 
@@ -37,8 +77,7 @@ class Simulator:
             image.blit(text, ((ts-w)/2, (ts-h)/2))
             self.images+=[image]
 
-        
-
+    
 
     def getBlank(self): 
         return self.tiles[-1]
@@ -50,7 +89,7 @@ class Simulator:
         self.tiles[self.tiles.index(tile)], self.opentile, self.prev = self.opentile, tile, self.opentile
 
     def in_grid(self, tile ): 
-        return tile[0]>=0 and tile[0]< self.gs[0] and tile[1]>=0 and tile[1]< self.gs[1]
+        return tile[0]>=0 and tile[0]< self.width and tile[1]>=0 and tile[1]< self.heigth
 
     def adjacent(self): 
         x,y = self.opentile
